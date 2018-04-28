@@ -6,6 +6,7 @@ import Html.Events exposing (onInput)
 import Regex exposing (regex)
 
 
+main : Program Never Model Msg
 main =
     Html.beginnerProgram { model = model, view = view, update = update }
 
@@ -105,11 +106,16 @@ validationsAndMessages otherPassword =
 
 relevantValidationMesage : String -> String -> Maybe String
 relevantValidationMesage password passwordAgain =
-    List.filter (\a -> not ((Tuple.first a) password)) (validationsAndMessages passwordAgain)
-        |> List.map (\a -> Tuple.second a)
-        |> List.head
+    let
+        filterFunction tuple =
+            not ((Tuple.first tuple) password)
+    in
+        List.filter filterFunction (validationsAndMessages passwordAgain)
+            |> List.map (\a -> Tuple.second a)
+            |> List.head
 
 
+colourAndMessage : String -> String -> ( String, String )
 colourAndMessage password passwordAgain =
     case relevantValidationMesage password passwordAgain of
         Just a ->
