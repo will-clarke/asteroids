@@ -65,38 +65,64 @@ view model =
 
 passwordIsLongEnough : String -> Bool
 passwordIsLongEnough password =
-    (String.length password) > 8
+    (String.length password) >= 8
 
 
 containsNumbers : String -> Bool
 containsNumbers string =
-    Regex.contains (regex "\\d") string
+    Regex.contains (Regex.regex "\\d") string
 
 
 containsUppercaseLetters : String -> Bool
 containsUppercaseLetters string =
-    Regex.contains (regex "[A-Z]+") string
+    Regex.contains (Regex.regex "[A-Z]+") string
 
 
 containsLowercaseLetters : String -> Bool
 containsLowercaseLetters string =
-    Regex.contains (regex "[a-z]+") string
+    Regex.contains (Regex.regex "[a-z]+") string
 
-passwordContainsFunkyLetters : String -> Bool
-passwordContainsFunkyLetters password =
-    containsUppercaseLetters password
-        && containsLowercaseLetters password
-        && containsNumbers password
+
+passwordsAreTheSame : String -> String -> Bool
+passwordsAreTheSame a b =
+    a == b
+
+
+shouldBeLongPassword : String -> Bool
+shouldBeLongPassword password =
+    String.length password > 8
+
+
+validationsAndMessages : String -> List ( String -> Bool, String )
+validationsAndMessages otherPassword =
+    [ ( shouldBeLongPassword, "should be long password" )
+    , ( containsUppercaseLetters, "should have upper" )
+    , ( containsLowercaseLetters, "should have lower" )
+    , ( containsNumbers, "should have number" )
+    , ( passwordsAreTheSame otherPassword, "Passwords Should be the same" )
+    ]
+
+
+relevantValidationMesage : String -> String -> Maybe String
+relevantValidationMesage password passwordAgain =
+    List.filter (\a -> not ((Tuple.first a) password)) (validationsAndMessages passwordAgain)
+        |> List.map (\a -> Tuple.second a)
+        |> List.head
+
+
+colourAndMessage password passwordAgain =
+    case relevantValidationMesage password passwordAgain of
+        Just a ->
+            ( "Red", a )
+
+        Nothing ->
+            ( "Green", "OK" )
+
 
 viewValidation : Model -> Html Msg
 viewValidation model =
     let
         ( color, message ) =
-            if not (passwordIsLongEnough model.password) then
-                ( "orange", "Password Not Long enough!: It's " ++ toString (String.length model.password) ++ " characters" )
-            else if model.password == model.passwordAgain && passwordContainsFunkyLetters model.password then
-                ( "green", "OK" )
-            else
-                ( "red", "Passwords do not match!" )
+            colourAndMessage model.password model.passwordAgain
     in
         div [ style [ ( "color", color ) ] ] [ text message ]
