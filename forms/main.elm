@@ -15,17 +15,24 @@ main =
 -- MODEL
 
 
+type ValidationResults
+    = None
+    | Start
+    | Some (List String)
+
+
 type alias Model =
     { name : String
     , password : String
     , passwordAgain : String
     , age : String
+    , validationResults : ValidationResults
     }
 
 
 model : Model
 model =
-    Model "" "" "" ""
+    Model "" "" "" "" Start
 
 
 
@@ -37,6 +44,7 @@ type Msg
     | Password String
     | PasswordAgain String
     | Age String
+    | Submit
 
 
 update : Msg -> Model -> Model
@@ -54,6 +62,9 @@ update msg model =
         PasswordAgain passwordAgain ->
             { model | passwordAgain = passwordAgain }
 
+        Submit ->
+            { model | validationResults = relevantValidations model }
+
 
 
 -- VIEW
@@ -66,6 +77,7 @@ view model =
         , input [ type_ "text", placeholder "Age", onInput Age ] []
         , input [ type_ "password", placeholder "Password", onInput Password ] []
         , input [ type_ "password", placeholder "Re-enter Password", onInput PasswordAgain ] []
+        , button [ Html.Events.onClick Submit ] [ text "Submit" ]
         , viewValidation model
         ]
 
@@ -87,28 +99,38 @@ validations model =
     ]
 
 
-relevantValidations : Model -> List String
+relevantValidations : Model -> ValidationResults
 relevantValidations model =
-    List.filter (\a -> not a.condition) (validations model)
-        |> List.map (\a -> a.errorMessage)
+    let
+        validationsText =
+            List.filter (\a -> not a.condition) (validations model)
+                |> List.map (\a -> a.errorMessage)
+    in
+        if List.isEmpty validationsText then
+            None
+        else
+            Some validationsText
 
 
-type alias ColourText =
+type alias ColourAndErrorText =
     { colour : String, text : String }
 
 
-colourAndMessages : Model -> List ColourText
-colourAndMessages model =
-    case relevantValidations model of
-        [] ->
-            [ ColourText "Green" "OK" ]
+colourAndMessages : ValidationResults -> List ColourAndErrorText
+colourAndMessages messages =
+    case messages of
+        None ->
+            [ ColourAndErrorText "Green" "OK" ]
 
-        errorMessages ->
-            List.map (\a -> ColourText "Red" a) errorMessages
+        Some errorMessages ->
+            List.map (\a -> ColourAndErrorText "Red" a) errorMessages
+
+        Start ->
+            []
 
 
 viewValidation : Model -> Html Msg
 viewValidation model =
-    colourAndMessages model
+    colourAndMessages model.validationResults
         |> List.map (\l -> li [ style [ ( "color", l.colour ) ] ] [ text l.text ])
         |> ul []
