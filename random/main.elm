@@ -2,9 +2,8 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (..)
-
-
--- import Random
+import Random
+import Svg
 
 
 main : Program Never Model Msg
@@ -31,13 +30,17 @@ view model =
 
 type Msg
     = Roll
+    | NewFace Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Roll ->
-            ( model, Cmd.none )
+            ( model, Random.generate NewFace (Random.int 1 6) )
+
+        NewFace newFace ->
+            ( Model newFace, Cmd.none )
 
 
 init : ( Model, Cmd Msg )
