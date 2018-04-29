@@ -1,0 +1,3 @@
+[submodule "elm-architecture-tutorial"]
+	path = elm-architecture-tutorial
+	url = git@github.com:evancz/elm-architecture-tutorial.git
