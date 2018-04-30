@@ -18,7 +18,7 @@ main =
 
 
 type alias Model =
-    { dieFace : Int }
+    { dieFace1 : Int, dieFace2 : Int }
 
 
 dieSvg : Int -> Svg Msg
@@ -47,9 +47,11 @@ dieSvg n =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ Html.text (toString model.dieFace) ]
+        [ h1 [] [ Html.text (toString model.dieFace1) ]
+        , dieSvg model.dieFace1
+        , h1 [] [ Html.text (toString model.dieFace2) ]
+        , dieSvg model.dieFace2
         , button [ onClick Roll ] [ Html.text "Roll" ]
-        , dieSvg model.dieFace
         ]
 
 
@@ -206,22 +208,32 @@ dicePipsSvg n =
 
 type Msg
     = Roll
-    | NewFace Int
+    | NewFace (Int, Int)
+
+
+dieGenerator : Random.Generator Int
+dieGenerator =
+    (Random.int 1 6)
+
+
+diePairGenerator : Random.Generator ( Int, Int )
+diePairGenerator =
+    Random.pair dieGenerator dieGenerator
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Roll ->
-            ( model, Random.generate NewFace (Random.int 1 6) )
+            ( model, Random.generate NewFace diePairGenerator )
 
-        NewFace newFace ->
-            ( Model newFace, Cmd.none )
+        NewFace die ->
+            ( Model (Tuple.first die) (Tuple.second die), Cmd.none )
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model 1, Cmd.none )
+    ( Model 1 1, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
