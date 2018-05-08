@@ -32,7 +32,11 @@ type alias WindowSize =
 
 
 type alias Model =
-    { ship : Ship, paused : Bool, windowSize : WindowSize } --, keysDown : Set.Set }
+    { ship : Ship
+    , paused : Bool
+    , windowSize : WindowSize
+    , keysDown : Set.Set Keyboard.KeyCode
+    }
 
 
 type Direction
@@ -63,10 +67,10 @@ update msg model =
             ( { model | windowSize = WindowSize size.width (size.height - 50) }, Cmd.none )
 
         KeyDown keycode ->
-            ( keyPressed keycode model, Cmd.none )
+            ( { model | keysDown = Set.insert keycode model.keysDown }, Cmd.none )
 
         KeyUp keycode ->
-            ( model, Cmd.none )
+            ( { model | keysDown = Set.remove keycode model.keysDown }, Cmd.none )
 
 
 keyPressed : Keyboard.KeyCode -> Model -> Model
@@ -94,7 +98,7 @@ init =
         (Ship 50 50)
         False
         (WindowSize 0 0)
-         -- Set.empty
+        Set.empty
     , Task.perform SetWindowSize Window.size
     )
 
@@ -111,7 +115,7 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view model =
     Html.div []
-        [ Html.text ("Keydowns: " ++ (toString Keyboard.downs))
+        [ Html.text ("Keydowns: " ++ (toString model.keysDown))
         , Html.br [] []
         , Svg.svg
             [ Svg.Attributes.width (toString model.windowSize.x)

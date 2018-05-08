@@ -61,6 +61,7 @@ dicePipsSvg n =
         1 ->
             [ circle
                 [ cx "50"
+
                 , cy "50"
                 , r "10"
                 ]
@@ -208,7 +209,7 @@ dicePipsSvg n =
 
 type Msg
     = Roll
-    | NewFace (Int, Int)
+    | NewFace Int Int
 
 
 dieGenerator : Random.Generator Int
@@ -225,10 +226,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Roll ->
-            ( model, Random.generate NewFace diePairGenerator )
+            ( model, Random.generate (uncurry NewFace) diePairGenerator )
 
-        NewFace die ->
-            ( Model (Tuple.first die) (Tuple.second die), Cmd.none )
+        NewFace dieA dieB ->
+            ( Model dieA dieB, Cmd.none )
 
 
 init : ( Model, Cmd Msg )
