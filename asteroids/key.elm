@@ -17,13 +17,13 @@ fromCode keyCode =
             Space
 
         37 ->
-            Right
+            Left
 
         38 ->
             Up
 
         39 ->
-            Left
+            Right
 
         40 ->
             Down

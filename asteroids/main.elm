@@ -67,10 +67,24 @@ update msg model =
             ( { model | windowSize = WindowSize size.width (size.height - 50) }, Cmd.none )
 
         KeyDown keycode ->
-            ( { model | keysDown = Set.insert keycode model.keysDown }, Cmd.none )
+            ( keysPressed { model | keysDown = Set.insert keycode model.keysDown }, Cmd.none )
 
         KeyUp keycode ->
             ( { model | keysDown = Set.remove keycode model.keysDown }, Cmd.none )
+
+
+keysPressed : Model -> Model
+keysPressed model =
+    let
+        foldlFunction keycode model =
+            keyPressed keycode model
+    in
+        Set.foldl foldlFunction model model.keysDown
+
+
+
+-- -- Set.foldl: (keycode -> model -> model) -> b -> Set.Set comparable -> b
+-- -- Set.foldl: (comparable -> b -> b) -> b -> Set.Set comparable -> b
 
 
 keyPressed : Keyboard.KeyCode -> Model -> Model
@@ -83,10 +97,10 @@ keyPressed keycode model =
             { model | ship = Ship model.ship.x (model.ship.y + 10) }
 
         Key.Left ->
-            { model | ship = Ship (model.ship.x + 10) model.ship.y }
+            { model | ship = Ship (model.ship.x - 10) model.ship.y }
 
         Key.Right ->
-            { model | ship = Ship (model.ship.x - 10) model.ship.y }
+            { model | ship = Ship (model.ship.x + 10) model.ship.y }
 
         _ ->
             model
@@ -115,7 +129,14 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view model =
     Html.div []
-        [ Html.text ("Keydowns: " ++ (toString model.keysDown))
+        [ Html.text
+            ("Keydowns: "
+                ++ (toString model.keysDown)
+                ++ " --- Ship.x: "
+                ++ (toString model.ship.x)
+                ++ " --- right button pressed: "
+                ++ (toString (Set.member 39 model.keysDown))
+            )
         , Html.br [] []
         , Svg.svg
             [ Svg.Attributes.width (toString model.windowSize.x)
