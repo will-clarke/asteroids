@@ -1,16 +1,14 @@
--- module Main exposing (..)
-
-
 module Main exposing (..)
 
-import Window
-import Keyboard
+import AnimationFrame
 import Html
-import Task
-import Svg
-import Set
-import Svg.Attributes
 import Key
+import Keyboard
+import Set
+import Svg
+import Svg.Attributes
+import Task
+import Window
 
 
 main : Program Never Model Msg
@@ -24,7 +22,7 @@ main =
 
 
 type alias Ship =
-    { x : Int, y : Int, vx : Int, vy : Int }
+    { x : Float, y : Float, vx : Float, vy : Float }
 
 
 type alias WindowSize =
@@ -53,6 +51,7 @@ type Msg
     | SetWindowSize Window.Size
     | KeyDown Keyboard.KeyCode
     | KeyUp Keyboard.KeyCode
+    | Tick Float
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -67,7 +66,7 @@ update msg model =
         SetWindowSize size ->
             ( { model
                 | windowSize = WindowSize size.width (size.height - 50)
-                , ship = Ship (size.width // 2) (size.height // 2) model.ship.vx model.ship.vx
+                , ship = Ship ((toFloat size.width) / 2.0) ((toFloat size.height) / 2.0) model.ship.vx model.ship.vx
               }
             , Cmd.none
             )
@@ -77,6 +76,21 @@ update msg model =
 
         KeyUp keycode ->
             ( { model | keysDown = Set.remove keycode model.keysDown }, Cmd.none )
+
+        Tick dt ->
+            step dt model
+
+
+step : Float -> Model -> ( Model, Cmd Msg )
+step dt model =
+    ( updateVelocity dt model, Cmd.none )
+
+
+updateVelocity : Float -> Model -> Model
+updateVelocity dt model =
+    let ship = model.ship
+    in
+    { model | ship = Ship (ship.x + ship.vx * dt / 10) (ship.y + ship.vy * dt / 10) ship.vx ship.vy }
 
 
 keysPressed : Model -> Model
@@ -129,6 +143,7 @@ subscriptions model =
         [ Window.resizes (\winSize -> SetWindowSize winSize)
         , Keyboard.downs KeyDown
         , Keyboard.ups KeyUp
+        , AnimationFrame.diffs Tick
         ]
 
 
@@ -149,16 +164,7 @@ view model =
             , Svg.Attributes.height (toString model.windowSize.y)
             , Svg.Attributes.viewBox "0 0 (toString model.windowSize.x)(toString model.windowSize.y)"
             ]
-            [ Svg.rect
-                [ Svg.Attributes.x "25"
-                , Svg.Attributes.y "25"
-                , Svg.Attributes.width "50"
-                , Svg.Attributes.height "50"
-                , Svg.Attributes.rx "15"
-                , Svg.Attributes.ry "15"
-                ]
-                []
-            , Svg.circle
+            [ Svg.circle
                 [ Svg.Attributes.cx (toString model.ship.x)
                 , Svg.Attributes.cy (toString model.ship.y)
                 , Svg.Attributes.r "40"
