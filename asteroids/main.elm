@@ -24,7 +24,7 @@ main =
 
 
 type alias Ship =
-    { x : Int, y : Int }
+    { x : Int, y : Int, vx : Int, vy : Int }
 
 
 type alias WindowSize =
@@ -36,6 +36,7 @@ type alias Model =
     , paused : Bool
     , windowSize : WindowSize
     , keysDown : Set.Set Keyboard.KeyCode
+    , log : String
     }
 
 
@@ -64,7 +65,12 @@ update msg model =
             ( { model | paused = not model.paused }, Cmd.none )
 
         SetWindowSize size ->
-            ( { model | windowSize = WindowSize size.width (size.height - 50) }, Cmd.none )
+            ( { model
+                | windowSize = WindowSize size.width (size.height - 50)
+                , ship = Ship (size.width // 2) (size.height // 2) model.ship.vx model.ship.vx
+              }
+            , Cmd.none
+            )
 
         KeyDown keycode ->
             ( keysPressed { model | keysDown = Set.insert keycode model.keysDown }, Cmd.none )
@@ -82,37 +88,37 @@ keysPressed model =
         Set.foldl foldlFunction model model.keysDown
 
 
-
--- -- Set.foldl: (keycode -> model -> model) -> b -> Set.Set comparable -> b
--- -- Set.foldl: (comparable -> b -> b) -> b -> Set.Set comparable -> b
-
-
 keyPressed : Keyboard.KeyCode -> Model -> Model
 keyPressed keycode model =
-    case Key.fromCode keycode of
-        Key.Up ->
-            { model | ship = Ship model.ship.x (model.ship.y - 10) }
+    let
+        ship =
+            model.ship
+    in
+        case Key.fromCode keycode of
+            Key.Up ->
+                { model | ship = Ship ship.x ship.y ship.vx (ship.vy - 10) }
 
-        Key.Down ->
-            { model | ship = Ship model.ship.x (model.ship.y + 10) }
+            Key.Down ->
+                { model | ship = Ship ship.x ship.y ship.vx (ship.vy + 10) }
 
-        Key.Left ->
-            { model | ship = Ship (model.ship.x - 10) model.ship.y }
+            Key.Left ->
+                { model | ship = Ship ship.x ship.y (ship.vx - 10) ship.vy }
 
-        Key.Right ->
-            { model | ship = Ship (model.ship.x + 10) model.ship.y }
+            Key.Right ->
+                { model | ship = Ship ship.x ship.y (ship.vx + 10) ship.vy }
 
-        _ ->
-            model
+            _ ->
+                model
 
 
 init : ( Model, Cmd Msg )
 init =
     ( Model
-        (Ship 50 50)
+        (Ship 50 50 0 0)
         False
         (WindowSize 0 0)
         Set.empty
+        ""
     , Task.perform SetWindowSize Window.size
     )
 
