@@ -1,12 +1,13 @@
 module Main exposing (..)
 
 import AnimationFrame
+import Collage
+import Color
+import Element
 import Html
 import Key
 import Keyboard
 import Set
-import Svg
-import Svg.Attributes
 import Task
 import Window
 
@@ -22,7 +23,55 @@ main =
 
 
 type alias Ship =
-    { x : Float, y : Float, vx : Float, vy : Float }
+    { position : Position
+    , velocity : Velocity
+    , angle : Float
+    }
+
+
+setPosition : ( Float, Float ) -> Ship -> Ship
+setPosition ( x, y ) ship =
+    Ship (Position x y)
+        (Velocity ship.velocity.x ship.velocity.y)
+        ship.angle
+
+
+setVelocity : ( Float, Float ) -> Ship -> Ship
+setVelocity ( x, y ) ship =
+    Ship (Position ship.position.x ship.position.y)
+        (Velocity x y)
+        ship.angle
+
+
+addRelativePosition : ( Float, Float ) -> Ship -> Ship
+addRelativePosition ( x, y ) ship =
+    Ship (Position (ship.position.x + x) (ship.position.y + y))
+        (Velocity ship.velocity.x ship.velocity.y)
+        ship.angle
+
+
+addRelativeVelocity : ( Float, Float ) -> Ship -> Ship
+addRelativeVelocity ( x, y ) ship =
+    Ship (Position ship.position.x ship.position.y)
+        (Velocity (ship.velocity.x + x) (ship.velocity.y + y))
+        ship.angle
+
+
+addRelativeVelocityToModel : ( Float, Float ) -> Model -> Model
+addRelativeVelocityToModel coordPair model =
+    { model | ship = addRelativeVelocity coordPair model.ship }
+
+
+type alias Position =
+    { x : Float
+    , y : Float
+    }
+
+
+type alias Velocity =
+    { x : Float
+    , y : Float
+    }
 
 
 type alias WindowSize =
@@ -34,7 +83,6 @@ type alias Model =
     , paused : Bool
     , windowSize : WindowSize
     , keysDown : Set.Set Keyboard.KeyCode
-    , log : String
     }
 
 
@@ -66,7 +114,6 @@ update msg model =
         SetWindowSize size ->
             ( { model
                 | windowSize = WindowSize size.width (size.height - 50)
-                , ship = Ship ((toFloat size.width) / 2.0) ((toFloat size.height) / 2.0) model.ship.vx model.ship.vx
               }
             , Cmd.none
             )
@@ -88,9 +135,16 @@ step dt model =
 
 updateVelocity : Float -> Model -> Model
 updateVelocity dt model =
-    let ship = model.ship
+    let
+        ship =
+            model.ship
     in
-    { model | ship = Ship (ship.x + ship.vx * dt / 10) (ship.y + ship.vy * dt / 10) ship.vx ship.vy }
+        { model
+            | ship =
+                Ship (Position (ship.position.x + ship.velocity.x * dt / 20) (ship.position.y + ship.velocity.y * dt / 20))
+                    (Velocity ship.velocity.x ship.velocity.y)
+                    0
+        }
 
 
 keysPressed : Model -> Model
@@ -110,16 +164,20 @@ keyPressed keycode model =
     in
         case Key.fromCode keycode of
             Key.Up ->
-                { model | ship = Ship ship.x ship.y ship.vx (ship.vy - 10) }
+                model
+                    |> addRelativeVelocityToModel ( 0, 10 )
 
             Key.Down ->
-                { model | ship = Ship ship.x ship.y ship.vx (ship.vy + 10) }
+                model
+                    |> addRelativeVelocityToModel ( 0, -10 )
 
             Key.Left ->
-                { model | ship = Ship ship.x ship.y (ship.vx - 10) ship.vy }
+                model
+                    |> addRelativeVelocityToModel ( -10, 0 )
 
             Key.Right ->
-                { model | ship = Ship ship.x ship.y (ship.vx + 10) ship.vy }
+                model
+                    |> addRelativeVelocityToModel ( 10, 0 )
 
             _ ->
                 model
@@ -128,11 +186,10 @@ keyPressed keycode model =
 init : ( Model, Cmd Msg )
 init =
     ( Model
-        (Ship 50 50 0 0)
+        (Ship (Position 50 50) (Velocity 0 0) 0)
         False
         (WindowSize 0 0)
         Set.empty
-        ""
     , Task.perform SetWindowSize Window.size
     )
 
@@ -149,29 +206,17 @@ subscriptions model =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.div []
-        [ Html.text
-            ("Keydowns: "
-                ++ (toString model.keysDown)
-                ++ " --- Ship.x: "
-                ++ (toString model.ship.x)
-                ++ " --- right button pressed: "
-                ++ (toString (Set.member 39 model.keysDown))
-            )
-        , Html.br [] []
-        , Svg.svg
-            [ Svg.Attributes.width (toString model.windowSize.x)
-            , Svg.Attributes.height (toString model.windowSize.y)
-            , Svg.Attributes.viewBox "0 0 (toString model.windowSize.x)(toString model.windowSize.y)"
-            ]
-            [ Svg.circle
-                [ Svg.Attributes.cx (toString model.ship.x)
-                , Svg.Attributes.cy (toString model.ship.y)
-                , Svg.Attributes.r "40"
-                , Svg.Attributes.stroke "black"
-                , Svg.Attributes.strokeWidth "3"
-                , Svg.Attributes.fill "red"
-                ]
-                []
-            ]
+    Collage.collage
+        model.windowSize.x
+        model.windowSize.y
+        [ Collage.polygon (shipCoords model.ship) |> Collage.filled Color.green
         ]
+        |> Element.toHtml
+
+
+shipCoords : Ship -> List ( Float, Float )
+shipCoords ship =
+    [ ( ship.position.x, ship.position.y + 20 )
+    , ( ship.position.x + 10, ship.position.y - 20 )
+    , ( ship.position.x - 10, ship.position.y - 20 )
+    ]
