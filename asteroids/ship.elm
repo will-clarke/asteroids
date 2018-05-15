@@ -1,6 +1,6 @@
 module Ship exposing (..)
 
-import OmgMaths exposing (Vector)
+import Vector exposing (Vector)
 
 
 shipVelocity : Float
@@ -15,16 +15,17 @@ type alias Ship =
     }
 
 
+
+-- cos -sin
+-- sin  cos
+
+
 shipCoords : Ship -> List Vector
 shipCoords ship =
-    let
-        ( shipX, shipY ) =
-            ship.position
-    in
-        [ ( shipX, shipY + 20 )
-        , ( shipX + 10, shipY - 20 )
-        , ( shipX - 10, shipY - 20 )
-        ]
+    [ Vector.add ship.position (Vector.rotate ( 1, 20 ) ship.angle)
+    , Vector.add ship.position (Vector.rotate ( 10, -20 ) ship.angle)
+    , Vector.add ship.position (Vector.rotate ( -10, -20 ) ship.angle)
+    ]
 
 
 setPosition : ( Float, Float ) -> Ship -> Ship

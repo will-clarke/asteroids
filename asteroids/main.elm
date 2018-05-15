@@ -7,11 +7,12 @@ import Element
 import Html
 import Key
 import Keyboard
+import Model exposing (Model)
 import Set
-import Task
-import Window
 import Ship
-import OmgMaths exposing (Vector)
+import Task
+import Text
+import Window
 
 
 main : Program Never Model Msg
@@ -22,29 +23,6 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
-
-
-addRelativeVelocityToModel : ( Float, Float ) -> Model -> Model
-addRelativeVelocityToModel coordPair model =
-    { model | ship = Ship.addRelativeVelocity coordPair model.ship }
-
-
-addRelativeAngleToModel : Float -> Model -> Model
-addRelativeAngleToModel angle model =
-    { model | ship = Ship.addRelativeAngle angle model.ship }
-
-
-addRelativePositionToModel : ( Float, Float ) -> Model -> Model
-addRelativePositionToModel coordPair model =
-    { model | ship = Ship.addRelativePosition coordPair model.ship }
-
-
-type alias Model =
-    { ship : Ship.Ship
-    , paused : Bool
-    , windowSize : Vector
-    , keysDown : Set.Set Keyboard.KeyCode
-    }
 
 
 type Direction
@@ -110,13 +88,13 @@ ensureWorldWrap model =
             model.windowSize
     in
         if shipX > (windowX / 2) then
-            addRelativePositionToModel ( negate windowX, 0 ) model
+            Model.addRelativePositionToShip ( negate windowX, 0 ) model
         else if shipX < (negate windowX / 2) then
-            addRelativePositionToModel ( windowX, 0 ) model
+            Model.addRelativePositionToShip ( windowX, 0 ) model
         else if shipY > (windowY / 2) then
-            addRelativePositionToModel ( 0, negate windowY ) model
+            Model.addRelativePositionToShip ( 0, negate windowY ) model
         else if shipY < (negate (windowY) / 2) then
-            addRelativePositionToModel ( 0, windowX ) model
+            Model.addRelativePositionToShip ( 0, windowX ) model
         else
             model
 
@@ -165,21 +143,19 @@ keyPressed keycode model =
         case Key.fromCode keycode of
             Key.Up ->
                 model
-                    |> addRelativeVelocityToModel ( 0, 2 )
+                    |> Model.addRelativeVelocityToShip ( 0, 2 )
 
             Key.Down ->
                 model
-                    |> addRelativeVelocityToModel ( 0, -2 )
+                    |> Model.addRelativeVelocityToShip ( 0, -2 )
 
             Key.Left ->
                 model
-                    -- |> addRelativeVelocityToModel ( -10, 0 )
-                    |> addRelativeAngleToModel 0.1
+                    |> Model.addRelativeAngleToShip 0.1
 
             Key.Right ->
                 model
-                    -- |> addRelativeVelocityToModel ( 10, 0 )
-                    |> addRelativeAngleToModel -0.1
+                    |> Model.addRelativeAngleToShip -0.1
 
             _ ->
                 model
@@ -211,8 +187,9 @@ view model =
     Collage.collage
         (round (Tuple.first model.windowSize))
         (round (Tuple.second model.windowSize))
-        [ Collage.polygon (Ship.shipCoords model.ship)
+        [
+         -- Collage.text (Text.fromString (toString (Ship.shipCoords model.ship))),
+         Collage.polygon (Ship.shipCoords model.ship)
             |> Collage.filled Color.green
-            |> Collage.rotate model.ship.angle
         ]
         |> Element.toHtml
