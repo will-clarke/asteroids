@@ -1,7 +1,7 @@
 module OmgMaths exposing (..)
 
 
-type alias Point = (Float, Float)
+type alias Vector = (Float, Float)
 
 
 -- for rotateUnitCircle:
@@ -9,22 +9,22 @@ type alias Point = (Float, Float)
 -- sin  cos
 
 
-unitX : Float -> Point
+unitX : Float -> Vector
 unitX degrees =
     ( cos degrees, sin degrees )
 
 
-unitY : Float -> Point
+unitY : Float -> Vector
 unitY degrees =
     ( negate (sin degrees), cos degrees)
 
 
-rotateUnitCircle : Float -> Point
+rotateUnitCircle : Float -> Vector
 rotateUnitCircle degrees =
     add (unitX degrees) (unitY degrees)
 
 
-add : Point -> Point -> Point
+add : Vector -> Vector -> Vector
 add a b =
     let
         ( ax, ay ) = a

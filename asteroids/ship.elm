@@ -1,6 +1,6 @@
 module Ship exposing (..)
 
-import OmgMaths exposing (Point)
+import OmgMaths exposing (Vector)
 
 
 shipVelocity : Float
@@ -8,20 +8,14 @@ shipVelocity =
     90.0
 
 
-type alias Velocity =
-    { x : Float
-    , y : Float
-    }
-
-
 type alias Ship =
-    { position : Point
-    , velocity : Velocity
+    { position : Vector
+    , velocity : Vector
     , angle : Float
     }
 
 
-shipCoords : Ship -> List Point
+shipCoords : Ship -> List Vector
 shipCoords ship =
     let
         ( shipX, shipY ) =
@@ -36,14 +30,14 @@ shipCoords ship =
 setPosition : ( Float, Float ) -> Ship -> Ship
 setPosition ( x, y ) ship =
     Ship ( x, y )
-        (Velocity ship.velocity.x ship.velocity.y)
+        ship.velocity
         ship.angle
 
 
 setVelocity : ( Float, Float ) -> Ship -> Ship
 setVelocity ( x, y ) ship =
     Ship ship.position
-        (Velocity x y)
+        ( x, y )
         ship.angle
 
 
@@ -54,21 +48,23 @@ addRelativePosition ( x, y ) ship =
             ship.position
     in
         Ship ( shipX + x, shipY + y )
-            (Velocity ship.velocity.x ship.velocity.y)
+            ship.velocity
             ship.angle
 
 
 addRelativeVelocity : ( Float, Float ) -> Ship -> Ship
 addRelativeVelocity ( x, y ) ship =
-    Ship ship.position
-        (Velocity (ship.velocity.x + x) (ship.velocity.y + y))
-        ship.angle
+    let
+        ( velX, velY ) =
+            ship.velocity
+    in
+        Ship ship.position
+            ( velX + x, velY + y )
+            ship.angle
 
 
 addRelativeAngle : Float -> Ship -> Ship
 addRelativeAngle angle ship =
     Ship ship.position
-        (Velocity ship.velocity.x ship.velocity.y)
-        (ship.angle
-            + angle
-        )
+        ship.velocity
+        (ship.angle + angle)

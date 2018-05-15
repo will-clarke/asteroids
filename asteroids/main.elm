@@ -11,7 +11,7 @@ import Set
 import Task
 import Window
 import Ship
-import OmgMaths exposing (Point)
+import OmgMaths exposing (Vector)
 
 
 main : Program Never Model Msg
@@ -39,16 +39,10 @@ addRelativePositionToModel coordPair model =
     { model | ship = Ship.addRelativePosition coordPair model.ship }
 
 
-type alias Velocity =
-    { x : Float
-    , y : Float
-    }
-
-
 type alias Model =
     { ship : Ship.Ship
     , paused : Bool
-    , windowSize : Point
+    , windowSize : Vector
     , keysDown : Set.Set Keyboard.KeyCode
     }
 
@@ -119,9 +113,9 @@ ensureWorldWrap model =
             addRelativePositionToModel ( negate windowX, 0 ) model
         else if shipX < (negate windowX / 2) then
             addRelativePositionToModel ( windowX, 0 ) model
-        else if shipY > ( windowY / 2) then
+        else if shipY > (windowY / 2) then
             addRelativePositionToModel ( 0, negate windowY ) model
-        else if shipY < (negate ( windowY) / 2) then
+        else if shipY < (negate (windowY) / 2) then
             addRelativePositionToModel ( 0, windowX ) model
         else
             model
@@ -133,19 +127,22 @@ updateVelocity dt model =
         ship =
             model.ship
 
-        ( x, y ) =
+        ( posX, posY ) =
             ship.position
 
+        ( velX, velY ) =
+            ship.velocity
+
         newPositionX =
-            x + ship.velocity.x * dt / Ship.shipVelocity
+            posX + velX * dt / Ship.shipVelocity
 
         newPositionY =
-            y + ship.velocity.y * dt / Ship.shipVelocity
+            posY + velY * dt / Ship.shipVelocity
     in
         { model
             | ship =
                 Ship.Ship ( newPositionX, newPositionY )
-                    (Velocity ship.velocity.x ship.velocity.y)
+                    ship.velocity
                     ship.angle
         }
 
@@ -191,7 +188,7 @@ keyPressed keycode model =
 init : ( Model, Cmd Msg )
 init =
     ( Model
-        (Ship.Ship ( 0, 0 ) (Velocity 0 0) 0)
+        (Ship.Ship ( 0, 0 ) ( 0, 0 ) 0)
         False
         ( 0, 0 )
         Set.empty
