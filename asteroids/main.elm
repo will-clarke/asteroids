@@ -10,7 +10,9 @@ import Keyboard
 import Set
 import Task
 import Window
-import Ship exposing (..)
+import Ship
+import OmgMaths exposing (Point)
+
 
 main : Program Never Model Msg
 main =
@@ -24,37 +26,29 @@ main =
 
 addRelativeVelocityToModel : ( Float, Float ) -> Model -> Model
 addRelativeVelocityToModel coordPair model =
-    { model | ship = addRelativeVelocity coordPair model.ship }
+    { model | ship = Ship.addRelativeVelocity coordPair model.ship }
 
 
 addRelativeAngleToModel : Float -> Model -> Model
 addRelativeAngleToModel angle model =
-    { model | ship = addRelativeAngle angle model.ship }
+    { model | ship = Ship.addRelativeAngle angle model.ship }
 
 
 addRelativePositionToModel : ( Float, Float ) -> Model -> Model
 addRelativePositionToModel coordPair model =
-    { model | ship = addRelativePosition coordPair model.ship }
+    { model | ship = Ship.addRelativePosition coordPair model.ship }
 
-
-type alias Position =
-    { x : Float
-    , y : Float
-    }
 
 type alias Velocity =
     { x : Float
     , y : Float
     }
 
-type alias WindowSize =
-    { x : Int, y : Int }
-
 
 type alias Model =
-    { ship : Ship
+    { ship : Ship.Ship
     , paused : Bool
-    , windowSize : WindowSize
+    , windowSize : Point
     , keysDown : Set.Set Keyboard.KeyCode
     }
 
@@ -86,7 +80,7 @@ update msg model =
 
         SetWindowSize size ->
             ( { model
-                | windowSize = WindowSize size.width (size.height - 50)
+                | windowSize = ( toFloat size.width, toFloat (size.height - 50) )
               }
             , Cmd.none
             )
@@ -114,16 +108,23 @@ step dt model =
 
 ensureWorldWrap : Model -> Model
 ensureWorldWrap model =
-    if model.ship.position.x > ((toFloat model.windowSize.x) / 2) then
-        addRelativePositionToModel ( negate (toFloat model.windowSize.x), 0 ) model
-    else if model.ship.position.x < (negate (toFloat model.windowSize.x) / 2) then
-        addRelativePositionToModel ( (toFloat model.windowSize.x), 0 ) model
-    else if model.ship.position.y > ((toFloat model.windowSize.y) / 2) then
-        addRelativePositionToModel ( 0, negate (toFloat model.windowSize.y) ) model
-    else if model.ship.position.y < (negate (toFloat model.windowSize.y) / 2) then
-        addRelativePositionToModel ( 0, (toFloat model.windowSize.x) ) model
-    else
-        model
+    let
+        ( shipX, shipY ) =
+            model.ship.position
+
+        ( windowX, windowY ) =
+            model.windowSize
+    in
+        if shipX > (windowX / 2) then
+            addRelativePositionToModel ( negate windowX, 0 ) model
+        else if shipX < (negate windowX / 2) then
+            addRelativePositionToModel ( windowX, 0 ) model
+        else if shipY > ( windowY / 2) then
+            addRelativePositionToModel ( 0, negate windowY ) model
+        else if shipY < (negate ( windowY) / 2) then
+            addRelativePositionToModel ( 0, windowX ) model
+        else
+            model
 
 
 updateVelocity : Float -> Model -> Model
@@ -132,15 +133,18 @@ updateVelocity dt model =
         ship =
             model.ship
 
+        ( x, y ) =
+            ship.position
+
         newPositionX =
-            ship.position.x + ship.velocity.x * dt / shipVelocity
+            x + ship.velocity.x * dt / Ship.shipVelocity
 
         newPositionY =
-            ship.position.y + ship.velocity.y * dt / shipVelocity
+            y + ship.velocity.y * dt / Ship.shipVelocity
     in
         { model
             | ship =
-                Ship (Position newPositionX newPositionY)
+                Ship.Ship ( newPositionX, newPositionY )
                     (Velocity ship.velocity.x ship.velocity.y)
                     ship.angle
         }
@@ -187,9 +191,9 @@ keyPressed keycode model =
 init : ( Model, Cmd Msg )
 init =
     ( Model
-        (Ship (Position 0 0) (Velocity 0 0) 0)
+        (Ship.Ship ( 0, 0 ) (Velocity 0 0) 0)
         False
-        (WindowSize 0 0)
+        ( 0, 0 )
         Set.empty
     , Task.perform SetWindowSize Window.size
     )
@@ -208,18 +212,10 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view model =
     Collage.collage
-        model.windowSize.x
-        model.windowSize.y
-        [ Collage.polygon (shipCoords model.ship)
+        (round (Tuple.first model.windowSize))
+        (round (Tuple.second model.windowSize))
+        [ Collage.polygon (Ship.shipCoords model.ship)
             |> Collage.filled Color.green
             |> Collage.rotate model.ship.angle
         ]
         |> Element.toHtml
-
-
-shipCoords : Ship -> List ( Float, Float )
-shipCoords ship =
-    [ ( ship.position.x, ship.position.y + 20 )
-    , ( ship.position.x + 10, ship.position.y - 20 )
-    , ( ship.position.x - 10, ship.position.y - 20 )
-    ]
