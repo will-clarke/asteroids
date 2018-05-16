@@ -1,7 +1,0 @@
-# Asteroids!
-
-Made with elm, which is pretty cool
-
-https://wclarke.net/asteroids/
-
-At the moment it's a bit broken / in progress... but hopefully it should improve soon!
