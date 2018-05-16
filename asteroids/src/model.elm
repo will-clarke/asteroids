@@ -3,6 +3,7 @@ import Ship
 import Vector exposing (Vector)
 import Set
 import Keyboard
+import Bullet exposing (Bullet)
 
 addRelativeVelocityToShip: ( Float, Float ) -> Model -> Model
 addRelativeVelocityToShip coordPair model =
@@ -24,5 +25,6 @@ type alias Model =
     , paused : Bool
     , windowSize : Vector
     , keysDown : Set.Set Keyboard.KeyCode
+    , bullets : List Bullet
     }
 

@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import AnimationFrame
+import Bullet exposing (Bullet)
 import Collage
 import Color
 import Element
@@ -14,19 +15,6 @@ import Task
 import Text
 import Vector
 import Window
-
-
-
-
-
-
-
-
-
-
--- ====================================
--- Shooting
--- ====================================
 
 
 main : Program Never Model Msg
@@ -87,6 +75,7 @@ step dt model =
         m =
             model
                 |> updateVelocity dt
+                |> updateBulletsToModel dt
                 |> ensureWorldWrap
     in
         ( m, Cmd.none )
@@ -139,6 +128,33 @@ updateVelocity dt model =
         }
 
 
+updateBulletsToModel : Float -> Model -> Model
+updateBulletsToModel dt model =
+    { model | bullets = updateBullets dt model.bullets }
+
+
+updateBullets : Float -> List Bullet -> List Bullet
+updateBullets dt bullets =
+    case bullets of
+        [] ->
+            bullets
+
+        h :: t ->
+            updateBullet dt h :: updateBullets dt t
+
+
+updateBullet : Float -> Bullet -> Bullet
+updateBullet dt bullet =
+    let
+        -- newDistance = dt / Ship.shipVelocity
+        -- toodo
+
+        newPosition =
+            Vector.add bullet.velocity bullet.position
+    in
+        { bullet | position = newPosition }
+
+
 keysPressed : Model -> Model
 keysPressed model =
     let
@@ -162,7 +178,7 @@ keyPressed keycode model =
                 { model | ship = Ship.reduceVelocity 10.0 model.ship }
 
             Key.Space ->
-                { model | ship = Ship.reduceVelocity 10.0 model.ship }
+                { model | bullets = Bullet.fire ship model.bullets }
 
             Key.Up ->
                 model
@@ -191,6 +207,7 @@ init =
         False
         ( 0, 0 )
         Set.empty
+        []
     , Task.perform SetWindowSize Window.size
     )
 
@@ -210,8 +227,22 @@ view model =
     Collage.collage
         (round (Tuple.first model.windowSize))
         (round (Tuple.second model.windowSize))
-        [ Collage.text (Text.fromString (toString model.keysDown))
-        , Collage.polygon (Ship.shipCoords model.ship)
-            |> Collage.filled Color.green
-        ]
+        (bulletCollages model.bullets
+            ++ [ Collage.text (Text.fromString (toString model.keysDown))
+               , Collage.polygon (Ship.shipCoords model.ship)
+                    |> Collage.filled Color.green
+               ]
+        )
         |> Element.toHtml
+
+
+bulletCollages : List Bullet -> List Collage.Form
+bulletCollages bullets =
+    List.map bulletToCollageForm bullets
+
+
+bulletToCollageForm : Bullet -> Collage.Form
+bulletToCollageForm bullet =
+    Collage.circle 21.0
+        |> Collage.filled Color.black
+        |> Collage.move bullet.position
