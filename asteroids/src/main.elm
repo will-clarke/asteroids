@@ -12,7 +12,21 @@ import Set
 import Ship
 import Task
 import Text
+import Vector
 import Window
+
+
+
+
+
+
+
+
+
+
+-- ====================================
+-- Shooting
+-- ====================================
 
 
 main : Program Never Model Msg
@@ -141,13 +155,22 @@ keyPressed keycode model =
             model.ship
     in
         case Key.fromCode keycode of
+            Key.Q ->
+                { model | ship = Ship.reduceVelocity 10.0 model.ship }
+
+            Key.Meta ->
+                { model | ship = Ship.reduceVelocity 10.0 model.ship }
+
+            Key.Space ->
+                { model | ship = Ship.reduceVelocity 10.0 model.ship }
+
             Key.Up ->
                 model
-                    |> Model.addRelativeVelocityToShip ( 0, 2 )
+                    |> Model.addRelativeVelocityToShip (Vector.rotate ( 0, 2 ) ship.angle)
 
             Key.Down ->
                 model
-                    |> Model.addRelativeVelocityToShip ( 0, -2 )
+                    |> Model.addRelativeVelocityToShip (Vector.rotate ( 0, -2 ) ship.angle)
 
             Key.Left ->
                 model
@@ -187,9 +210,8 @@ view model =
     Collage.collage
         (round (Tuple.first model.windowSize))
         (round (Tuple.second model.windowSize))
-        [
-         -- Collage.text (Text.fromString (toString (Ship.shipCoords model.ship))),
-         Collage.polygon (Ship.shipCoords model.ship)
+        [ Collage.text (Text.fromString (toString model.keysDown))
+        , Collage.polygon (Ship.shipCoords model.ship)
             |> Collage.filled Color.green
         ]
         |> Element.toHtml

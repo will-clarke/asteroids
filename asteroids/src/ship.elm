@@ -69,3 +69,30 @@ addRelativeAngle angle ship =
     Ship ship.position
         ship.velocity
         (ship.angle + angle)
+
+
+reduceVelocity : Float -> Ship -> Ship
+reduceVelocity n ship =
+    let
+        ( x, y ) =
+            ship.velocity
+
+        newX =
+            if x > n then
+                x - n
+            else if x < -n then
+                x + n
+            else
+                0
+
+        newY =
+            if y > n then
+                y - n
+            else if y < -n then
+                y + n
+            else
+                0
+    in
+        Ship ship.position
+            ( newX, newY )
+            ship.angle
